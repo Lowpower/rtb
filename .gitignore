@@ -1,6 +1,10 @@
 # Compiled Object files
 *.slo
 *.lo
+<<<<<<< HEAD
+=======
+*.o
+>>>>>>> 6a85ee79d4ac9dbf99d20bd79db3c6c0e73ef6e7
 *.obj
 
 # Precompiled Headers
@@ -21,8 +25,15 @@
 *.a
 *.lib
 
+<<<<<<< HEAD
 
 boomer
 tags
 *.o
 *.out
+=======
+# Executables
+*.exe
+*.out
+*.app
+>>>>>>> 6a85ee79d4ac9dbf99d20bd79db3c6c0e73ef6e7
