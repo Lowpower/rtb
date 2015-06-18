@@ -16,13 +16,11 @@ static void PrintLog(RequestInfo& req_info)
 		"%s"				//ip, e.g. 127.0.0.1
 		"%s"				//process hostname
 		"%.3f"			//process total time
-		"%s"				//refer
 		"%s"				//user agent
 		, req_info.GetReqTimeStr().c_str()
 		, req_info.GetIp().c_str()
 		, g_host_name.c_str()
 		, req_info.GetProcessTime() / 1000000.0
-		, req_info.GetRefer().c_str()
 		, req_info.GetUserAgent().c_str()
 		);
 }

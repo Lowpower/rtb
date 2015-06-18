@@ -4,24 +4,26 @@
 #include <pthread.h>
 #include <dlfcn.h> 
 #include <string>
+#include <time.h>
 
 #include "fcgi_stdio.h"
 
 #include "log.h"
 #include "config_data.h"
 #include "ini_file.h"
-#include "clientcgi.h"
+//#include "clientcgi.h"
 
 using namespace std;
 
-extern std::string g_exec_name;
-extern std::string g_host_name;
+std::string g_exec_name;
+std::string g_host_name;
 
 struct FcgiThreadParam{
 	bool Init(int tid){
 		tid_ = tid;
 		return true;
 	}
+	int tid(){return tid_;}
 private:
 	int tid_;
 };
@@ -32,7 +34,7 @@ void* fcgi_process(void* thd_param)
 	int tid = param->tid();
 	srand(tid * tid * tid);
 	
-	INT32 ret = 0;
+	int ret = 0;
 	struct timeval tv, tv1, tv2;
 	char timeformatbuf[64];
 
@@ -44,8 +46,8 @@ void* fcgi_process(void* thd_param)
 	struct tm cur_time;
 	
 	for(;;){
-		static pthread_mutex_lock req_locker = PTHREAD_MUTEX_INITIALIZER;
-		pthread_mutex_lock(&req_locler);
+		static pthread_mutex_t req_locker = PTHREAD_MUTEX_INITIALIZER;
+		pthread_mutex_lock(&req_locker);
 		ret = FCGX_Accept_r(&request);
 		pthread_mutex_unlock(&req_locker);
 		if(ret < 0){
@@ -53,19 +55,17 @@ void* fcgi_process(void* thd_param)
 			continue;
 		}
 		
-		localetime_r(&tv.tv_sec, & cur_time);
-		strftime(timeformatbuf, sizeof(timeformatbuf));
+		localtime_r(&tv.tv_sec, & cur_time);
+		strftime(timeformatbuf, sizeof(timeformatbuf), "%Y-%m-%d %H:%M:%S", &cur_time);
 
 		RequestInfo req_info = RequestInfo();
 		req_info.SetRawRequest(&request);
 		
 		gettimeofday(&tv, NULL);
-		req_info.SetStartConsumeStr(timeformatbuf);
-		
 		req_info.SetReqTime(tv);
 		req_info.SetReqTimeStr(timeformatbuf);
 
-		char *request_method = FCGX_GetParam("REQUEST_METHOD", request.envq);
+		char *request_method = FCGX_GetParam("REQUEST_METHOD", request.envp);
 		char *remote_addr_tmp = FCGX_GetParam("REMOTE_ADDR", request.envp);
 		char *query_string_tmp = FCGX_GetParam("QUERY_STRING", request.envp);
 		char *domain_cookie_tmp = FCGX_GetParam("DOMAIN_COOKIE", request.envp);
@@ -89,14 +89,17 @@ void* fcgi_process(void* thd_param)
 		}
 
 		if ( strncasecmp(request_method, "POST", 4) == 0 ){
-			if (0 == strncasecmp(request_uri, URI_STR_TANX_BID, strlen(URI_STR_TANX_BID))){
+			if (0 == strncasecmp(request_uri, URI_POST_NORMAL, strlen(URI_POST_NORMAL))){
+				//TODO
+				INFO("post normal");
 			}else{
 				ERROR("Unknown POST uri!");
 				FCGX_Finish_r(&request);
     			continue;
 			}
         }else if (strncasecmp(request_method, "GET", 3) == 0){
-			if (0 == strncasecmp(request_uri, URI_STR_TANX_BIDRES, strlen(URI_STR_TANX_BIDRES))){
+			if (0 == strncasecmp(request_uri, URI_GET_NORMAL, strlen(URI_GET_NORMAL))){
+				INFO("get normal");
 			}else{
 				DEBUG("Unknown GET uri!");
 				FCGX_Finish_r(&request);
@@ -206,7 +209,7 @@ int main()
 	}
 	g_exec_name = p+1;
 	
-	log::Init();
+	Log::Init();
 	INFO("fastcgi boomer starting---");
 	INFO("init log ok");
 	if(gethostname(buf, 256) != 0){

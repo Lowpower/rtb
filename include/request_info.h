@@ -4,16 +4,16 @@
 #include <string>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <sys/time.h>
 #include "fcgi_stdio.h"
 #include "global_type.h"
 
-typedef std::unordered_set<uint32_t> Uint32Set;
-typedef std::unordered_set<std::string> StringSet;
+using namespace std;
+typedef unordered_set<uint32_t> Uint32Set;
+typedef unordered_set<std::string> StringSet;
 
-typedef std::unordered_map<std::string, std::string> ParamDict;
-
-using  namespace std;
+typedef unordered_map<std::string, std::string> ParamDict;
 
 class RequestInfo
 {
