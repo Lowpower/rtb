@@ -5,6 +5,7 @@
 #include <dlfcn.h> 
 #include <string>
 #include <time.h>
+#include <errno.h>
 
 #include "fcgi_stdio.h"
 
@@ -44,7 +45,6 @@ void* fcgi_process(void* thd_param)
 	INFO("child process %d init ok", param->tid());
 	int32_t pt = 0;;
 	struct tm cur_time;
-	
 	for(;;){
 		static pthread_mutex_t req_locker = PTHREAD_MUTEX_INITIALIZER;
 		pthread_mutex_lock(&req_locker);
@@ -200,7 +200,7 @@ int main()
 	// init rsyslog
 	char buf[256] = {'\0'};
 	readlink("/proc/self/exe", buf, 256);
-	char *p = strchr(buf, '/');
+	char *p = strrchr(buf, '/');
 	*p = '\0';
 	INFO("%s",buf);
 	if(chdir(buf) < 0){
@@ -230,13 +230,21 @@ int main()
 	
 	FCGX_Init();
 	pthread_t tids[thread_num];
+
 	FcgiThreadParam thd_param[thread_num];
-	for(int i = 0; i < thread_num; i++){
-		if(0 != pthread_create(&tids[i], NULL, (void* (*)(void*))fcgi_process, &thd_param[i]))
+    for(int i = 0; i < thread_num; i++){
+        if(false == thd_param[i].Init(i)){
+            ERROR("thread parameter initialize error!\n");
+            return -1;
+        }
+    }
+
+    for(int i = 0; i < thread_num; i++) {
+    	if(0 != pthread_create(&tids[i], NULL, (void* (*)(void*))fcgi_process, &thd_param[i])){
 			ERROR("create fcgi thread failed");
 			return -1;
+		}
 	}
-
 	INFO("start fastcgi process ok");
 	INFO("fastcgi boomer started");
 	for(int i = 0; i < thread_num; i++){

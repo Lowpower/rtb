@@ -17,7 +17,7 @@ using namespace std;
 #ifndef BOOMER_DEBUG
 #define DEBUG(...) 
 #else
-#define DEBUG(fmt, args...) syslog(LOG_DEBUG, "DEBUG [%s:%d]"fmt, __FILE__, __LINE__, ##args)
+#define DEBUG(fmt, args...) syslog(LOG_DEBUG, " DEBUG [%s:%d]"fmt, __FILE__, __LINE__, ##args)
 #endif
 
 extern std::string g_exec_name;
