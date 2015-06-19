@@ -47,13 +47,13 @@ void* fcgi_process(void* thd_param)
 	struct tm cur_time;
 	for(;;){
 		static pthread_mutex_t req_locker = PTHREAD_MUTEX_INITIALIZER;
-		pthread_mutex_lock(&req_locker);
-		ret = FCGX_Accept_r(&request);
-		pthread_mutex_unlock(&req_locker);
-		if(ret < 0){
-			INFO("request error");
-			continue;
-		}
+	    pthread_mutex_lock(&req_locker);
+	    ret = FCGX_Accept_r(&request);
+	    pthread_mutex_unlock(&req_locker);
+        if (ret < 0){
+			INFO("accept request error");
+            continue;
+        }
 		
 		localtime_r(&tv.tv_sec, & cur_time);
 		strftime(timeformatbuf, sizeof(timeformatbuf), "%Y-%m-%d %H:%M:%S", &cur_time);
