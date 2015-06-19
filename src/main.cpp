@@ -35,7 +35,7 @@ void* fcgi_process(void* thd_param)
 	int tid = param->tid();
 	srand(tid * tid * tid);
 	
-	int ret = 0;
+	int32_t ret = 0;
 	struct timeval tv, tv1, tv2;
 	char timeformatbuf[64];
 
