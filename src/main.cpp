@@ -64,23 +64,23 @@ void* fcgi_process(void* thd_param)
 		gettimeofday(&tv, NULL);
 		req_info.SetReqTime(tv);
 		req_info.SetReqTimeStr(timeformatbuf);
-
 		char *request_method = FCGX_GetParam("REQUEST_METHOD", request.envp);
 		char *remote_addr_tmp = FCGX_GetParam("REMOTE_ADDR", request.envp);
 		char *query_string_tmp = FCGX_GetParam("QUERY_STRING", request.envp);
 		char *domain_cookie_tmp = FCGX_GetParam("DOMAIN_COOKIE", request.envp);
-		char *real_ip = FCGX_GetParam("REAL_IP", request.envp);
-		char *user_agent = FCGX_GetParam("USER_AGENT", request.envp);
+		char *user_agent = FCGX_GetParam("UA", request.envp);
 		char *request_uri = FCGX_GetParam("REQUEST_URI", request.envp);
-		char *serv_ip = FCGX_GetParam("SERVER_IP",request.envp);
+		char *serv_addr = FCGX_GetParam("SERVER_ADDR",request.envp);
+		char *real_ip = FCGX_GetParam("X-Forwarded-For", request.envp);
 
+		DEBUG("request_method:		[%s]", request_method);
 		DEBUG("query_string:		[%s]", query_string_tmp);
 		DEBUG("domain_cookie:		[%s]", domain_cookie_tmp);
 		DEBUG("remote_addr:			[%s]", remote_addr_tmp);
-		DEBUG("real_ip:				[%s]", real_ip);
 		DEBUG("user_agent:			[%s]", user_agent);
 		DEBUG("request_uri:			[%s]", request_uri);
-		DEBUG("serv_addr:			[%s]", serv_ip);
+		DEBUG("serv_addr:			[%s]", serv_addr);
+		DEBUG("real_ip:				[%s]", real_ip);
 		
 		if (request_method == NULL || request_uri == NULL){
 			ERROR("bad request, no method or uri!");
@@ -90,7 +90,6 @@ void* fcgi_process(void* thd_param)
 
 		if ( strncasecmp(request_method, "POST", 4) == 0 ){
 			if (0 == strncasecmp(request_uri, URI_POST_NORMAL, strlen(URI_POST_NORMAL))){
-				//TODO
 				INFO("post normal");
 			}else{
 				ERROR("Unknown POST uri!");
@@ -99,14 +98,14 @@ void* fcgi_process(void* thd_param)
 			}
         }else if (strncasecmp(request_method, "GET", 3) == 0){
 			if (0 == strncasecmp(request_uri, URI_GET_NORMAL, strlen(URI_GET_NORMAL))){
-				INFO("get normal");
+				INFO("get log request");
 			}else{
 				DEBUG("Unknown GET uri!");
 				FCGX_Finish_r(&request);
     			continue;
 			}
 
-			if (NULL == remote_addr_tmp && NULL == real_ip){
+			if (NULL == remote_addr_tmp){
 				ERROR("bad request, no client ip!");
 				FCGX_Finish_r(&request);
 				continue;
@@ -170,6 +169,7 @@ void* fcgi_process(void* thd_param)
 			FCGX_Finish_r(&request);
     		continue;
 		}
+		INFO("NOTICE");
 		req_info.SetStopConsumeTime("InitParam");
 
 		gettimeofday(&tv2, NULL);
