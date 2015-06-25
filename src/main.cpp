@@ -12,6 +12,7 @@
 #include "log.h"
 #include "config_data.h"
 #include "ini_file.h"
+#include "printlog.h"
 //#include "clientcgi.h"
 
 using namespace std;
@@ -25,6 +26,7 @@ struct FcgiThreadParam{
 		return true;
 	}
 	int tid(){return tid_;}
+	Printlog log_agent;
 private:
 	int tid_;
 };
@@ -38,12 +40,12 @@ void* fcgi_process(void* thd_param)
 	int32_t ret = 0;
 	struct timeval tv, tv1, tv2;
 	char timeformatbuf[64];
-
+	
 	FCGX_Request request;
 	FCGX_InitRequest(&request, 0, 0);
 	
 	INFO("child process %d init ok", param->tid());
-	int32_t pt = 0;;
+	int32_t pt = 0;
 	struct tm cur_time;
 	for(;;){
 		static pthread_mutex_t req_locker = PTHREAD_MUTEX_INITIALIZER;
@@ -171,7 +173,20 @@ void* fcgi_process(void* thd_param)
 		}
 		INFO("NOTICE");
 		req_info.SetStopConsumeTime("InitParam");
-
+		ParamDict tmpdict = req_info.GetQueryDict();
+		if (tmpdict["tbname"].empty() || tmpdict["starttime"].empty() || tmpdict["stoptime"].empty() || tmpdict["limits"].empty() || tmpdict["dbname"].empty()){
+			ERROR("parameter empty");
+			continue;
+		}
+		param->log_agent.SetTablename(tmpdict["tbname"]);
+		param->log_agent.SetDbname(tmpdict["dbname"]);
+		param->log_agent.SetStarttime(tmpdict["starttime"]);
+		param->log_agent.SetStoptime(tmpdict["stoptime"]);
+		param->log_agent.SetCountlimit(atoi(tmpdict["limits"].c_str()));
+		if(!param->log_agent.QuerySql()){
+			ERROR("query failed");
+			continue;
+		}
 		gettimeofday(&tv2, NULL);
 		pt = (tv2.tv_sec - tv.tv_sec) * 1000000 + tv2.tv_usec - tv.tv_usec;
 		req_info.SetProcessTime(pt);
@@ -227,7 +242,7 @@ int main()
 
 	int thread_num = ConfigData::Get("SYSTEM", "thread_num", 1);
     DEBUG("thread_num: %d", thread_num);
-	
+
 	FCGX_Init();
 	pthread_t tids[thread_num];
 
@@ -237,6 +252,11 @@ int main()
             ERROR("thread parameter initialize error!\n");
             return -1;
         }
+ 		if(thd_param[i].log_agent.Init() == false) {
+			ERROR("init printlog agent failed");
+			return -1;
+		}
+		INFO("init printlog  ok");
     }
 
     for(int i = 0; i < thread_num; i++) {

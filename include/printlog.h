@@ -2,8 +2,11 @@
 #define __PRINTLOG_H__
 
 #include <string>
+#include <vector>
 #include "global_type.h"
 #include "log.h"
+#include "config_data.h"
+#include "mysql.h"
 
 using namespace std;
 
@@ -11,6 +14,8 @@ class Printlog
 {	
 public:
 	Printlog();
+	bool Init();
+	
 	void SetStarttime(const string &time){starttime = time; }
 	const string& GetStarttime()const{return starttime; }
 	
@@ -20,16 +25,28 @@ public:
 	void SetTablename(const string &name){tablename = name;}
 	const string& Gettablename(){return tablename;}
 	
+	void SetDbname(const string &name){dbname = name;}
+	const string& Getdbname(){return dbname;}
+	
 	void SetCountlimit(const int &num){count_limit = num;}
 	const int& GetCountlimit(){return count_limit;}
 
-	const string& GetRequestbody(const string &starttime, const string &stoptime, const string &tablename, const int &countlimit);
+	bool GetRefer();
+	const vector<string>& GetRequestbody(){return request_body;}
+	bool QuerySql();
 private:
+	pthread_mutex_t reply_locker_;
 	string starttime;
 	string stoptime;
 	string tablename;
+	string dbname;
 	int count_limit;
-	string request_body;
+	vector<string> request_body;
+	string host;
+	int port;
+	string user;
+	string passwd;
+	string refer;
 };
 
 #endif
