@@ -32,16 +32,17 @@ public:
 	const int& GetCountlimit(){return count_limit;}
 
 	bool GetRefer();
-	const vector<string>& GetRequestbody(){return request_body;}
 	bool QuerySql();
+	bool Response(FCGX_Request * request);
 private:
-	pthread_mutex_t reply_locker_;
+	void GetResponseBody();
 	string starttime;
 	string stoptime;
 	string tablename;
 	string dbname;
 	int count_limit;
 	vector<string> request_body;
+	string responseBody;
 	string host;
 	int port;
 	string user;

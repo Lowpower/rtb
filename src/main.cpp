@@ -113,7 +113,7 @@ void* fcgi_process(void* thd_param)
 				continue;
 			}
 			
-			if (NULL == query_string_tmp || NULL == domain_cookie_tmp || NULL == user_agent){
+			if (NULL == query_string_tmp){
 				ERROR("bad request, no query info!");
 				FCGX_Finish_r(&request);
 				continue;
@@ -182,9 +182,16 @@ void* fcgi_process(void* thd_param)
 		param->log_agent.SetDbname(tmpdict["dbname"]);
 		param->log_agent.SetStarttime(tmpdict["starttime"]);
 		param->log_agent.SetStoptime(tmpdict["stoptime"]);
-		param->log_agent.SetCountlimit(atoi(tmpdict["limits"].c_str()));
+		if (atoi(tmpdict["limits"].c_str()) > 1000)
+			param->log_agent.SetCountlimit(1000);
+		else
+			param->log_agent.SetCountlimit(atoi(tmpdict["limits"].c_str()));
 		if(!param->log_agent.QuerySql()){
 			ERROR("query failed");
+			continue;
+		}
+		if(!param->log_agent.Response(&request)){
+			ERROR("reponse failed!");
 			continue;
 		}
 		gettimeofday(&tv2, NULL);
