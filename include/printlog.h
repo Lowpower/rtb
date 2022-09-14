@@ -3,10 +3,9 @@
 
 #include <string>
 #include <vector>
-#include "global_type.h"
+#include "mysql.h"
 #include "log.h"
 #include "config_data.h"
-#include "mysql.h"
 
 using namespace std;
 
@@ -31,6 +30,7 @@ public:
 	void SetCountlimit(const int &num){count_limit = num;}
 	const int& GetCountlimit(){return count_limit;}
 
+	int ProcessPrintlog(RequestInfo &req);
 	bool GetRefer();
 	bool QuerySql();
 	bool Response(FCGX_Request * request);

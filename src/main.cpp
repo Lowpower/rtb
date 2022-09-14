@@ -10,6 +10,7 @@
 #include "fcgi_stdio.h"
 
 #include "log.h"
+#include "boomer.h"
 #include "config_data.h"
 #include "ini_file.h"
 #include "printlog.h"
@@ -100,6 +101,7 @@ void* fcgi_process(void* thd_param)
 			}
         }else if (strncasecmp(request_method, "GET", 3) == 0){
 			if (0 == strncasecmp(request_uri, URI_GET_NORMAL, strlen(URI_GET_NORMAL))){
+				req_info.SetReqType(RequestInfo::RT_PRINTLOG);
 				INFO("get log request");
 			}else{
 				DEBUG("Unknown GET uri!");
@@ -173,26 +175,15 @@ void* fcgi_process(void* thd_param)
 		}
 		INFO("NOTICE");
 		req_info.SetStopConsumeTime("InitParam");
-		ParamDict tmpdict = req_info.GetQueryDict();
-		if (tmpdict["tbname"].empty() || tmpdict["starttime"].empty() || tmpdict["stoptime"].empty() || tmpdict["limits"].empty() || tmpdict["dbname"].empty()){
-			ERROR("parameter empty");
-			continue;
-		}
-		param->log_agent.SetTablename(tmpdict["tbname"]);
-		param->log_agent.SetDbname(tmpdict["dbname"]);
-		param->log_agent.SetStarttime(tmpdict["starttime"]);
-		param->log_agent.SetStoptime(tmpdict["stoptime"]);
-		if (atoi(tmpdict["limits"].c_str()) > 1000)
-			param->log_agent.SetCountlimit(1000);
-		else
-			param->log_agent.SetCountlimit(atoi(tmpdict["limits"].c_str()));
-		if(!param->log_agent.QuerySql()){
-			ERROR("query failed");
-			continue;
-		}
-		if(!param->log_agent.Response(&request)){
-			ERROR("reponse failed!");
-			continue;
+		Boomer *boomeres;
+		switch(req_info.GetReqType()){
+			case RequestInfo::RT_PRINTLOG:
+				boomeres->ProcessPrintlog(param->log_agent, req_info, request);
+				break;
+			default:
+				ERROR("unknown request type!");
+				FCGX_Finish_r(&request);
+				break;
 		}
 		gettimeofday(&tv2, NULL);
 		pt = (tv2.tv_sec - tv.tv_sec) * 1000000 + tv2.tv_usec - tv.tv_usec;

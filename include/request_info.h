@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <sys/time.h>
 #include "fcgi_stdio.h"
-#include "global_type.h"
 
 using namespace std;
 typedef unordered_set<uint32_t> Uint32Set;
@@ -18,6 +17,9 @@ typedef unordered_map<std::string, std::string> ParamDict;
 class RequestInfo
 {
 public:
+	enum RequestType{
+		RT_PRINTLOG = 0
+	};
 	static bool ParseKeyValue(const std::string &str, ParamDict &param_dict);
 public:
 	void SetRawRequest(FCGX_Request *req) { raw_req_ = req; }
@@ -32,11 +34,14 @@ public:
 	void SetProcessTime(const int32_t &process_time) { process_time_ = process_time; }
 	const int32_t& GetProcessTime() const{ return process_time_; }
 
+	void SetReqType(const RequestType &rt){req_type = rt;}
+	const RequestType& GetReqType(){return req_type;}
+
 	void SetConsumeTime(const string &consume_name, const std::pair<int64_t, int64_t> &consume_time) { 
 		consume_time_.insert(std::pair<string, std::pair<int64_t, int64_t> >(consume_name, consume_time)); 
 	}
 	void SetStartConsumeTime(const string &consume_name) {
-#ifdef BIDDER_DEBUG
+#ifdef BOOMER_DEBUG
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		int64_t pt = tv.tv_sec * 1000000 + tv.tv_usec;
@@ -44,7 +49,7 @@ public:
 #endif
 	}
 	void SetStopConsumeTime(const string &consume_name) {
-#ifdef BIDDER_DEBUG
+#ifdef BOOMEr_DEBUG
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		int64_t pt = tv.tv_sec * 1000000 + tv.tv_usec;
@@ -90,6 +95,7 @@ private:
 	string cookie_str_;
 	ParamDict query_dict_;
 	ParamDict cookie_dict_;
+	RequestType req_type;
 };
 
 #endif
